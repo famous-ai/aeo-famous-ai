@@ -11,6 +11,7 @@ export async function generateStaticFAQ(options: FetchOptions): Promise<{
 }> {
   try {
     const data = await fetchFaqs(options);
+    console.log(`Generated static FAQ page with ${data.faqs.length} FAQ items`);
     return {
       faqs: data.faqs,
     };

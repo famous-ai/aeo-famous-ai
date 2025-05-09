@@ -20,6 +20,7 @@ export async function fetchFaqs(options: FetchOptions): Promise<FAQResponse> {
     }
 
     const data = await response.json();
+    console.log(`Successfully fetched ${data.faqs.length} FAQs from ${options.apiUrl}`);
     return data as FAQResponse;
   } catch (error) {
     console.error('Error fetching FAQs:', error);

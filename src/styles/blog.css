@@ -1,0 +1,200 @@
+/* Blog styles */
+
+/* Blog list styles */
+.famousai-blogs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.famousai-blogs-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.famousai-blogs-list {
+  display: grid;
+  gap: 2rem;
+}
+
+.famousai-blog-item {
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+}
+
+.famousai-blog-item-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.famousai-blog-item-link {
+  color: #0070f3;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.famousai-blog-item-link:hover {
+  color: #0050c3;
+  text-decoration: underline;
+}
+
+.famousai-blog-item-date {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.famousai-blog-item-excerpt {
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.famousai-blog-item-read-more {
+  color: #0070f3;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.famousai-blog-item-read-more:hover {
+  text-decoration: underline;
+}
+
+.famousai-blogs-loading,
+.famousai-blogs-empty {
+  text-align: center;
+  padding: 3rem 0;
+  color: #666;
+}
+
+/* Single blog article styles */
+.famousai-blog-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.famousai-blog-breadcrumbs {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.famousai-breadcrumb-link {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+.famousai-breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.famousai-blog-article {
+  margin-bottom: 3rem;
+}
+
+.famousai-blog-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.famousai-blog-date {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.famousai-blog-content {
+  color: #333;
+  line-height: 1.8;
+  font-size: 1.125rem;
+}
+
+.famousai-blog-content h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 2rem 0 1rem;
+  color: #333;
+}
+
+.famousai-blog-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem;
+  color: #333;
+}
+
+.famousai-blog-content p {
+  margin-bottom: 1.5rem;
+}
+
+.famousai-blog-content ul,
+.famousai-blog-content ol {
+  margin-bottom: 1.5rem;
+  padding-left: 2rem;
+}
+
+.famousai-blog-content li {
+  margin-bottom: 0.5rem;
+}
+
+.famousai-blog-content a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+.famousai-blog-content a:hover {
+  text-decoration: underline;
+}
+
+.famousai-blog-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 2rem 0;
+}
+
+.famousai-blog-content blockquote {
+  border-left: 4px solid #0070f3;
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #555;
+  font-style: italic;
+}
+
+.famousai-blog-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eaeaea;
+}
+
+.famousai-blog-back-link {
+  color: #0070f3;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.famousai-blog-back-link:hover {
+  text-decoration: underline;
+}
+
+.famousai-blog-loading,
+.famousai-blog-error {
+  text-align: center;
+  padding: 3rem 0;
+  color: #666;
+}
+
+.famousai-blog-error-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}

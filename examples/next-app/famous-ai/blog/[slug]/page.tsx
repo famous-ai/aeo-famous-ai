@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'aeo-famous-ai';
+import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
 
 export default function BlogPage({ params }: { params: { slug: string } }) {
   const { slug } = params;

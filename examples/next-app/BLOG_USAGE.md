@@ -5,7 +5,7 @@ This guide explains how to use the Famous AI blog components to quickly add a bl
 ## Installation
 
 ```bash
-npm install aeo-famous-ai
+npm install famous-ai
 ```
 
 ## Environment Setup
@@ -32,7 +32,7 @@ Create a page to list all blog articles:
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BlogArticlesTemplate, fetchBlogs, Blog } from 'aeo-famous-ai';
+import { BlogArticlesTemplate, fetchBlogs, Blog } from 'famous-ai';
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -74,7 +74,7 @@ Create a page to display a single blog article:
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'aeo-famous-ai';
+import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
 
 export default function BlogPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
@@ -114,7 +114,7 @@ For better SEO, you can use server-side rendering:
 ```tsx
 // pages/blog/[slug].tsx (Pages Router)
 import { GetServerSideProps } from 'next';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'aeo-famous-ai';
+import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
 
 interface BlogPageProps {
   blog: Blog | null;
@@ -197,7 +197,7 @@ For single blog articles:
 You can manually configure the API settings:
 
 ```tsx
-import { fetchBlogs, FetchBlogsConfig } from 'aeo-famous-ai';
+import { fetchBlogs, FetchBlogsConfig } from 'famous-ai';
 
 const config: FetchBlogsConfig = {
   apiKey: 'your-api-key',

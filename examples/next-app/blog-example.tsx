@@ -6,7 +6,7 @@ import {
   fetchBlogBySlug,
   Blog,
   BlogResponse
-} from 'aeo-famous-ai';
+} from 'famous-ai';
 
 // Example of a Blog List Page
 export function BlogListExample() {
@@ -95,7 +95,7 @@ NEXT_PUBLIC_API_KEY=your-api-key
 // pages/api/blogs.ts
 /*
 import { NextApiRequest, NextApiResponse } from 'next';
-import { fetchBlogs, BlogResponse } from 'aeo-famous-ai';
+import { fetchBlogs, BlogResponse } from 'famous-ai';
 
 export default async function handler(
   req: NextApiRequest,
@@ -119,7 +119,7 @@ export default async function handler(
 // pages/blog/[slug].tsx
 /*
 import { GetServerSideProps } from 'next';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'aeo-famous-ai';
+import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
 
 interface BlogPageProps {
   blog: Blog | null;
@@ -150,7 +150,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
 // Example of Next.js App Router integration
 // app/blog/[slug]/page.tsx
 /*
-import { BlogArticleTemplate, fetchBlogBySlug } from 'aeo-famous-ai';
+import { BlogArticleTemplate, fetchBlogBySlug } from 'famous-ai';
 
 export default async function BlogPage({ params }: { params: { slug: string } }) {
   const blog = await fetchBlogBySlug(params.slug);

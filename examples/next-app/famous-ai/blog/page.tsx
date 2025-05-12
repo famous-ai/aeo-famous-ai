@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BlogArticlesTemplate, fetchBlogs, BlogResponse, Blog } from 'aeo-famous-ai';
+import { BlogArticlesTemplate, fetchBlogs, BlogResponse, Blog } from 'famous-ai';
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);

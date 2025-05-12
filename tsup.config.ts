@@ -7,4 +7,8 @@ export default defineConfig({
   clean: true,
   splitting: false,
   external: ['react', 'next', 'react-dom'],
+  outExtension: ({ format }) => ({
+    js: format === 'cjs' ? '.js' : '.mjs',
+  }),
+  injectStyle: true,
 });

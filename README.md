@@ -1,6 +1,6 @@
 # Famous AI - Headless CMS for Next.js
 
-A headless CMS package for Next.js that fetches FAQ data from your API and renders it statically at build time.
+A headless CMS package for Next.js that fetches and renders Blog data from your API.
 
 ## Installation
 
@@ -10,93 +10,124 @@ npm install famous-ai
 yarn add famous-ai
 ```
 
+## Features
+
+- **Blog Components**: Ready-to-use components for displaying blog listings and individual articles
+- **Automatic Styling**: CSS is automatically included and applied to components
+- **API Integration**: Simple utilities for fetching data from your backend
+
 ## Usage
 
-### Setting up Static Generation
+### Blog List Page
 
-In your Next.js project, create a page that will render your FAQs:
+Create a page to display all blog articles:
 
 ```tsx
-// pages/faq.tsx
-import { GetStaticProps } from 'next';
-import { FAQRenderer, generateStaticFAQ, FAQ } from 'famous-ai';
+// app/blog/page.tsx (App Router)
+"use client";
 
-interface FAQPageProps {
-  faqs: FAQ[];
-}
+import { useState, useEffect } from 'react';
+import { BlogArticlesTemplate, fetchBlogs, Blog } from 'famous-ai';
 
-export default function FAQPage({ faqs }: FAQPageProps) {
+export default function BlogPage() {
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBlogData() {
+      try {
+        const response = await fetchBlogs();
+        if (response) {
+          setBlogs(response.blogs);
+        }
+      } catch (error) {
+        console.error('Error fetching blogs:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBlogData();
+  }, []);
+
   return (
-    <div className="container">
-      <h1>Frequently Asked Questions</h1>
-      <FAQRenderer faqs={faqs} />
-    </div>
+    <BlogArticlesTemplate
+      blogs={blogs}
+      loading={loading}
+      basePath="/blog"
+    />
   );
 }
+```
 
-export const getStaticProps: GetStaticProps = async () => {
-  const { faqs } = await generateStaticFAQ({
-    apiUrl: 'https://your-backend-api.com/api/faqs',
-    // Optional: Add custom headers if needed
-    // headers: {
-    //   'Authorization': 'Bearer YOUR_TOKEN'
-    // }
-  });
+### Single Blog Article Page
 
-  return {
-    props: {
-      faqs,
-    },
-    // Optional: enable ISR with a revalidation period
-    revalidate: 3600, // Revalidate every hour
-  };
-};
+Create a page to display a single blog article:
+
+```tsx
+// app/blog/[slug]/page.tsx (App Router)
+"use client";
+
+import { useState, useEffect } from 'react';
+import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
+
+export default function BlogArticlePage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  const [blog, setBlog] = useState<Blog | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBlogData() {
+      try {
+        const fetchedBlog = await fetchBlogBySlug(slug);
+        setBlog(fetchedBlog);
+      } catch (error) {
+        console.error('Error fetching blog:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBlogData();
+  }, [slug]);
+
+  return (
+    <BlogArticleTemplate
+      blog={blog}
+      loading={loading}
+      basePath="/blog"
+      homePath="/"
+    />
+  );
+}
 ```
 
 ### Styling
 
-The FAQ renderer component uses class names with the `famousai-` prefix that you can target with your own CSS:
+The package **automatically includes all necessary CSS styles**. They are bundled with the components and will be applied automatically when you use them in your application.
 
-```css
-/* styles/faq.css */
-.famousai-faq-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.famousai-faq-item {
-  margin-bottom: 24px;
-  border-bottom: 1px solid #eaeaea;
-  padding-bottom: 16px;
-}
-
-.famousai-faq-question {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.famousai-faq-answer p {
-  margin-bottom: 16px;
-}
-```
+All styles use the `famousai-` prefix for class names to prevent conflicts with your application styles.
 
 ## API
 
 ### Components
 
-- `FAQRenderer`: A React component that renders FAQ items
+- `BlogArticlesTemplate`: A React component that renders a list of blog articles
+- `BlogArticleTemplate`: A React component that renders a single blog article
 
 ### Utilities
 
-- `fetchFaqs`: Fetches FAQ data from an API endpoint
-- `generateStaticFAQ`: Utility for Next.js static site generation
+- `fetchBlogs`: Fetches all blog articles from your API
+- `fetchBlogBySlug`: Fetches a specific blog article by its slug
+- `fetchBlogById`: Fetches a specific blog article by its ID
 
 ### Types
 
-- `FAQ`: Interface for FAQ item (question and answer)
-- `FAQResponse`: Interface for API response containing FAQs
-- `FetchOptions`: Options for API requests
-- `FAQRendererProps`: Props for the FAQRenderer component
+- `Blog`: Interface for blog article data
+- `BlogResponse`: Interface for API response containing blogs
+- `FetchBlogsConfig`: Configuration options for API requests
+- `BlogArticlesTemplateProps`: Props for the BlogArticlesTemplate component
+- `BlogArticleTemplateProps`: Props for the BlogArticleTemplate component
 
 ## License
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BlogArticlesTemplate, fetchBlogs, BlogResponse, Blog } from 'aeo-famous-ai';
 
-export default function BlogPage() {
+export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
 

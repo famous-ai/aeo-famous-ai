@@ -34,7 +34,7 @@ Create a page to list all blog articles:
 import { useState, useEffect } from 'react';
 import { BlogArticlesTemplate, fetchBlogs, Blog } from 'aeo-famous-ai';
 
-export default function BlogPage() {
+export default function BlogsPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
 

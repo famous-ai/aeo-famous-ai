@@ -1,6 +1,6 @@
 # Famous AI - Headless CMS for Next.js
 
-A headless CMS package for Next.js that fetches and renders Blog data from your API.
+A headless CMS package for Next.js that fetches and renders Blog data from your API, optimized for the App Router architecture and static site generation.
 
 ## Installation
 
@@ -13,88 +13,110 @@ yarn add famous-ai
 ## Features
 
 - **Blog Components**: Ready-to-use components for displaying blog listings and individual articles
-- **Automatic Styling**: CSS is automatically included and applied to components
+- **Static Site Generation**: Built for Next.js App Router with static generation support
+- **Automatic Styling**: CSS is included and applied to components
 - **API Integration**: Simple utilities for fetching data from your backend
+- **SEO Optimization**: Metadata API support for improved SEO
 
-## Usage
+## Usage with Next.js App Router
 
-### Blog List Page
+### 1. Import CSS
 
-Create a page to display all blog articles:
+Include the styles in your root layout:
 
 ```tsx
-// app/blog/page.tsx (App Router)
-"use client";
+// app/layout.tsx
+import 'famous-ai/dist/index.css';
 
-import { useState, useEffect } from 'react';
-import { BlogArticlesTemplate, fetchBlogs, Blog } from 'famous-ai';
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
 
-export default function BlogPage() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loading, setLoading] = useState(true);
+### 2. Blog List Page (Static Generation)
 
-  useEffect(() => {
-    async function fetchBlogData() {
-      try {
-        const response = await fetchBlogs();
-        if (response) {
-          setBlogs(response.blogs);
-        }
-      } catch (error) {
-        console.error('Error fetching blogs:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+```tsx
+// app/blog/page.tsx
+import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
 
-    fetchBlogData();
-  }, []);
+export const revalidate = 3600; // Revalidate every hour (optional)
+
+export default async function BlogPage() {
+  // Fetch data during build
+  const response = await fetchBlogs();
+  const blogs = response?.blogs || [];
 
   return (
     <BlogArticlesTemplate
       blogs={blogs}
-      loading={loading}
+      loading={false}
       basePath="/blog"
     />
   );
 }
 ```
 
-### Single Blog Article Page
-
-Create a page to display a single blog article:
+### 3. Blog Detail Page (Static Generation with Dynamic Routes)
 
 ```tsx
-// app/blog/[slug]/page.tsx (App Router)
-"use client";
+// app/blog/[slug]/page.tsx
+import { notFound } from 'next/navigation';
+import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug } from 'famous-ai';
+import { Metadata } from 'next';
 
-import { useState, useEffect } from 'react';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
+// Generate metadata for each blog post (optional but recommended for SEO)
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const blog = await fetchBlogBySlug(params.slug);
+  
+  if (!blog) {
+    return {
+      title: 'Blog Not Found',
+    };
+  }
+  
+  return {
+    title: blog.title,
+    description: blog.technical_data.metadata.core.description,
+    openGraph: {
+      title: blog.technical_data.metadata.open_graph.title,
+      description: blog.technical_data.metadata.open_graph.description,
+    },
+  };
+}
 
-export default function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  const [blog, setBlog] = useState<Blog | null>(null);
-  const [loading, setLoading] = useState(true);
+// Generate static paths at build time
+export async function generateStaticParams() {
+  const response = await fetchBlogs();
+  const blogs = response?.blogs || [];
+  
+  return blogs.map((blog) => ({
+    slug: blog.technical_data.url_data.slug,
+  }));
+}
 
-  useEffect(() => {
-    async function fetchBlogData() {
-      try {
-        const fetchedBlog = await fetchBlogBySlug(slug);
-        setBlog(fetchedBlog);
-      } catch (error) {
-        console.error('Error fetching blog:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+export const revalidate = 3600; // Revalidate every hour (optional)
 
-    fetchBlogData();
-  }, [slug]);
+export default async function BlogPage({ params }: { params: { slug: string } }) {
+  // Fetch specific blog by slug at build time
+  const blog = await fetchBlogBySlug(params.slug);
+  
+  // If blog not found, show 404
+  if (!blog) {
+    notFound();
+  }
 
   return (
     <BlogArticleTemplate
       blog={blog}
-      loading={loading}
+      loading={false}
       basePath="/blog"
       homePath="/"
     />
@@ -102,20 +124,14 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
 }
 ```
 
-### Styling
-
-The package **automatically includes all necessary CSS styles**. They are bundled with the components and will be applied automatically when you use them in your application.
-
-All styles use the `famousai-` prefix for class names to prevent conflicts with your application styles.
-
-## API
+## API Reference
 
 ### Components
 
-- `BlogArticlesTemplate`: A React component that renders a list of blog articles
-- `BlogArticleTemplate`: A React component that renders a single blog article
+- `BlogArticlesTemplate`: Renders a list of blog articles
+- `BlogArticleTemplate`: Renders a single blog article
 
-### Utilities
+### Utility Functions
 
 - `fetchBlogs`: Fetches all blog articles from your API
 - `fetchBlogBySlug`: Fetches a specific blog article by its slug
@@ -128,6 +144,22 @@ All styles use the `famousai-` prefix for class names to prevent conflicts with 
 - `FetchBlogsConfig`: Configuration options for API requests
 - `BlogArticlesTemplateProps`: Props for the BlogArticlesTemplate component
 - `BlogArticleTemplateProps`: Props for the BlogArticleTemplate component
+
+## Environment Variables
+
+Create a `.env.local` file with your API configuration:
+
+```
+FAMOUS_AI_API_KEY=your_api_key
+FAMOUS_AI_API_BASE_URL=https://your-api-base-url.com
+```
+
+## Examples
+
+See the `examples/next-app` directory for a complete working example with:
+- App Router implementation with static site generation
+- Dynamic routes with metadata for SEO
+- Proper directory structure and configuration
 
 ## License
 

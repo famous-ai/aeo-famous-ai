@@ -1,33 +1,16 @@
-"use client";
+import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
 
-import { useState, useEffect } from 'react';
-import { BlogArticlesTemplate, fetchBlogs, BlogResponse, Blog } from 'famous-ai';
+export const revalidate = 3600; // Revalidate every hour (optional)
 
-export default function BlogsPage() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchBlogData() {
-      try {
-        const response = await fetchBlogs();
-        if (response) {
-          setBlogs(response.blogs);
-        }
-      } catch (error) {
-        console.error('Error fetching blogs:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchBlogData();
-  }, []);
+export default async function BlogPage() {
+  // Fetch data during build
+  const response = await fetchBlogs();
+  const blogs = response?.blogs || [];
 
   return (
     <BlogArticlesTemplate
       blogs={blogs}
-      loading={loading}
+      loading={false}
       basePath="/famous-ai/blog"
     />
   );

@@ -1,166 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import {
-  BlogArticlesTemplate,
-  BlogArticleTemplate,
-  fetchBlogs,
-  fetchBlogBySlug,
-  Blog,
-  BlogResponse
-} from 'famous-ai';
+// This file serves as a reference for implementing the Famous AI blog components
+// in a Next.js application using the new App Router
 
-// Example of a Blog List Page
-export function BlogListExample() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loading, setLoading] = useState(true);
+// For the blog listing page (app/blog/page.tsx):
+import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
 
-  useEffect(() => {
-    async function loadBlogs() {
-      try {
-        // Fetch blogs using the library function
-        const response = await fetchBlogs();
-        if (response) {
-          setBlogs(response.blogs);
-        }
-      } catch (error) {
-        console.error('Error fetching blogs:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+export const revalidate = 3600; // Revalidate every hour (optional)
 
-    loadBlogs();
-  }, []);
+export default async function BlogPage() {
+  // Fetch data during build
+  const response = await fetchBlogs();
+  const blogs = response?.blogs || [];
 
   return (
-    <div>
-      <h1>Blog List Example</h1>
-      <p>This example shows how to use the BlogArticlesTemplate component:</p>
-      
-      {/* Use the BlogArticlesTemplate component */}
-      <BlogArticlesTemplate
-        blogs={blogs}
-        loading={loading}
-        basePath="/blog"
-        title="Our Blog Articles"
-      />
-    </div>
-  );
-}
-
-// Example of a Single Blog Page
-export function SingleBlogExample({ slug }: { slug: string }) {
-  const [blog, setBlog] = useState<Blog | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadBlog() {
-      try {
-        // Fetch a specific blog by slug
-        const fetchedBlog = await fetchBlogBySlug(slug);
-        setBlog(fetchedBlog);
-      } catch (error) {
-        console.error('Error fetching blog:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadBlog();
-  }, [slug]);
-
-  return (
-    <div>
-      <h1>Single Blog Example</h1>
-      <p>This example shows how to use the BlogArticleTemplate component:</p>
-      
-      {/* Use the BlogArticleTemplate component */}
-      <BlogArticleTemplate
-        blog={blog}
-        loading={loading}
-        basePath="/blog"
-        homePath="/"
-      />
-    </div>
-  );
-}
-
-// Example of environment configuration
-// In your .env file or environment variables:
-/*
-NEXT_PUBLIC_API_BASE_URL=https://your-api-url.com
-NEXT_PUBLIC_API_KEY=your-api-key
-*/
-
-// Example of Next.js API Routes integration
-// pages/api/blogs.ts
-/*
-import { NextApiRequest, NextApiResponse } from 'next';
-import { fetchBlogs, BlogResponse } from 'famous-ai';
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<BlogResponse | { error: string }>
-) {
-  try {
-    const response = await fetchBlogs();
-    if (response) {
-      res.status(200).json(response);
-    } else {
-      res.status(404).json({ error: 'No blogs found' });
-    }
-  } catch (error) {
-    console.error('Error fetching blogs:', error);
-    res.status(500).json({ error: 'Failed to fetch blogs' });
-  }
-}
-*/
-
-// Example of Next.js Pages Router integration
-// pages/blog/[slug].tsx
-/*
-import { GetServerSideProps } from 'next';
-import { BlogArticleTemplate, fetchBlogBySlug, Blog } from 'famous-ai';
-
-interface BlogPageProps {
-  blog: Blog | null;
-}
-
-export default function BlogPage({ blog }: BlogPageProps) {
-  return (
-    <BlogArticleTemplate
-      blog={blog}
+    <BlogArticlesTemplate
+      blogs={blogs}
+      loading={false}
       basePath="/blog"
-      homePath="/"
     />
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const slug = params?.slug as string;
-  const blog = await fetchBlogBySlug(slug);
-  
-  return {
-    props: {
-      blog,
-    },
-  };
-};
-*/
+// For the individual blog page (app/blog/[slug]/page.tsx):
+import { notFound } from 'next/navigation';
+import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug } from 'famous-ai';
+import { Metadata } from 'next';
 
-// Example of Next.js App Router integration
-// app/blog/[slug]/page.tsx
-/*
-import { BlogArticleTemplate, fetchBlogBySlug } from 'famous-ai';
-
-export default async function BlogPage({ params }: { params: { slug: string } }) {
+// Generate metadata for each blog post (optional but recommended for SEO)
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const blog = await fetchBlogBySlug(params.slug);
   
+  if (!blog) {
+    return {
+      title: 'Blog Not Found',
+    };
+  }
+  
+  return {
+    title: blog.title,
+    description: blog.technical_data.metadata.core.description,
+    openGraph: {
+      title: blog.technical_data.metadata.open_graph.title,
+      description: blog.technical_data.metadata.open_graph.description,
+    },
+  };
+}
+
+// Generate static paths at build time
+export async function generateStaticParams() {
+  const response = await fetchBlogs();
+  const blogs = response?.blogs || [];
+  
+  return blogs.map((blog) => ({
+    slug: blog.technical_data.url_data.slug,
+  }));
+}
+
+export const revalidate = 3600; // Revalidate every hour (optional)
+
+export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
+  // Fetch specific blog by slug at build time
+  const blog = await fetchBlogBySlug(params.slug);
+  
+  // If blog not found, show 404
+  if (!blog) {
+    notFound();
+  }
+
   return (
     <BlogArticleTemplate
       blog={blog}
+      loading={false}
       basePath="/blog"
       homePath="/"
     />
   );
 }
-*/

@@ -46,8 +46,8 @@ export interface FetchBlogsOptions {
  * Default fetch blogs config
  */
 const defaultConfig: FetchBlogsConfig = {
-  apiKey: process.env.NEXT_PUBLIC_API_KEY || process.env.API_KEY,
-  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL,
+  apiKey: process.env.FAMOUS_AI_API_KEY,
+  apiBaseUrl: process.env.FAMOUS_AI_API_BASE_URL,
   endpoint: 'api/v1/blogs',
   headers: {}
 };
@@ -69,12 +69,12 @@ export async function fetchBlogs(
 
   // Validate required config
   if (!apiKey) {
-    console.error('API Key is required. Set it in config or through environment variables NEXT_PUBLIC_API_KEY or API_KEY.');
+    console.error('API Key is required. Set it in config or through the FAMOUS_AI_API_KEY environment variable.');
     return null;
   }
 
   if (!apiBaseUrl) {
-    console.error('API Base URL is required. Set it in config or through environment variables NEXT_PUBLIC_API_BASE_URL or API_BASE_URL.');
+    console.error('API Base URL is required. Set it in config or through the FAMOUS_AI_API_BASE_URL environment variable.');
     return null;
   }
 
@@ -95,15 +95,21 @@ export async function fetchBlogs(
     url += `/${id}`;
   }
 
-  // Prepare headers
+  // Add timestamp to ensure fresh data during each build
+  const timestamp = Date.now();
+  
+  // Prepare headers with cache control to prevent caching without Next.js warnings
   const requestHeaders: Record<string, string> = {
     'accept': 'application/json',
     'X-API-Key': apiKey,
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'x-build-time': timestamp.toString(),
     ...headers
   };
 
   try {
-    // Fetch data from API
+    // Standard fetch with cache-busting headers added to request
     const response = await fetch(url, {
       method: 'GET',
       headers: requestHeaders

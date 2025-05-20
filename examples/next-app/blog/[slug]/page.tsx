@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug } from "famous-ai";
+import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug, convertBlogToNextMetadata } from "famous-ai";
 
 interface PageProps {
   params: Promise<{ slug: string }> & { slug: string };
@@ -26,14 +26,8 @@ export async function generateMetadata({ params }: PageProps) {
     };
   }
 
-  return {
-    title: blog.title,
-    description: blog.technical_data.metadata.core.description,
-    openGraph: {
-      title: blog.technical_data.metadata.open_graph.title,
-      description: blog.technical_data.metadata.open_graph.description,
-    },
-  };
+  const metadata = convertBlogToNextMetadata(blog);
+  return metadata;
 }
 
 // Default page component

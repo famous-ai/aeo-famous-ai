@@ -8,6 +8,7 @@ export {
   fetchBlogBySlug,
   fetchBlogById
 } from './lib/fetchBlogs';
+export { convertBlogToNextMetadata } from './lib/metadataConverter';
 
 // Export Blog types
 export type { BlogArticlesTemplateProps } from './lib/BlogArticlesTemplate';

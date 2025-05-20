@@ -1,6 +1,6 @@
 import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
 
-export const revalidate = 3600; // Revalidate every hour (optional)
+// export const revalidate = 3600; // Revalidate every hour (optional)
 
 export default async function BlogPage() {
   // Fetch data during build
@@ -11,7 +11,7 @@ export default async function BlogPage() {
     <BlogArticlesTemplate
       blogs={blogs}
       loading={false}
-      basePath="/famous-ai/blog"
+      basePath="/blog"
     />
   );
 }

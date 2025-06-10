@@ -13,20 +13,37 @@ export interface BlogArticleTemplateProps {
   loading?: boolean;
 
   /**
-   * Base path for blog links (for data extraction)
+   * Base path for blog links
    */
   basePath?: string;
 
   /**
-   * Home page path (for data extraction)
+   * Home page path
    */
   homePath?: string;
 
+  // Control what SDK renders (selective hiding)
   /**
-   * Required: Consumer controls entire layout and presentation
+   * Hide the article title - parent will handle it
    */
-  renderLayout: (content: React.ReactNode, blog: Blog) => React.ReactNode;
+  hideTitle?: boolean;
 
+  /**
+   * Hide the breadcrumb navigation - parent will handle it
+   */
+  hideBreadcrumb?: boolean;
+
+  /**
+   * Hide the metadata (author, date) - parent will handle it
+   */
+  hideMetadata?: boolean;
+
+  /**
+   * Hide all header elements (breadcrumb + title + metadata)
+   */
+  hideHeader?: boolean;
+
+  // Enhanced content render props
   /**
    * Optional: Render table of contents when available
    */
@@ -42,6 +59,13 @@ export interface BlogArticleTemplateProps {
    */
   renderFAQ?: (faqs: SimpleFAQItem[]) => React.ReactNode;
 
+  // Optional layout wrapper
+  /**
+   * Optional: Wrapper for entire content - if not provided, uses default layout
+   */
+  renderLayout?: (content: React.ReactNode, blog: Blog) => React.ReactNode;
+
+  // Custom state renderers
   /**
    * Optional: Loading state renderer
    */
@@ -89,10 +113,16 @@ function extractEnhancedContent(blog: Blog): {
 export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
   blog,
   loading = false,
-  renderLayout,
+  basePath = '/blog',
+  homePath = '/',
+  hideTitle = false,
+  hideBreadcrumb = false,
+  hideMetadata = false,
+  hideHeader = false,
   renderTOC,
   renderInsights,
   renderFAQ,
+  renderLayout,
   renderLoading,
   renderError,
 }) => {
@@ -109,21 +139,75 @@ export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
   // Extract enhanced content with fault tolerance
   const enhanced = extractEnhancedContent(blog);
 
-  // Create base content
+  // Check if header should be hidden (hideHeader overrides individual flags)
+  const shouldHideBreadcrumb = hideHeader || hideBreadcrumb;
+  const shouldHideTitle = hideHeader || hideTitle;
+  const shouldHideMetadata = hideHeader || hideMetadata;
+
+  // Build default breadcrumb component
+  const breadcrumbComponent = !shouldHideBreadcrumb ? (
+    <nav style={{ fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>
+      <a href={homePath} style={{ color: '#0070f3', textDecoration: 'none' }}>Home</a>
+      {' > '}
+      <a href={basePath} style={{ color: '#0070f3', textDecoration: 'none' }}>Blog</a>
+      {' > '}
+      <span>{blog.title}</span>
+    </nav>
+  ) : null;
+
+  // Build default title component
+  const titleComponent = !shouldHideTitle ? (
+    <h1 style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem', color: '#333' }}>
+      {blog.title}
+    </h1>
+  ) : null;
+
+  // Build default metadata component
+  const metadataComponent = !shouldHideMetadata && blog.published_at ? (
+    <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '2rem' }}>
+      Published: {new Date(blog.published_at).toLocaleDateString()}
+      {blog.updated_at && blog.updated_at !== blog.published_at && (
+        <> | Updated: {new Date(blog.updated_at).toLocaleDateString()}</>
+      )}
+    </div>
+  ) : null;
+
+  // Build base content
   const baseContent = (
     <div dangerouslySetInnerHTML={{ __html: blog.content }} />
   );
 
-  // Create enhanced content by combining base + optional enhancements
-  const enhancedContent = (
+  // Build enhanced content sections
+  const enhancedSections = (
     <>
-      {baseContent}
       {enhanced.tableOfContents.length > 0 && renderTOC && renderTOC(enhanced.tableOfContents)}
       {enhanced.keyInsights.length > 0 && renderInsights && renderInsights(enhanced.keyInsights)}
       {enhanced.faqs.length > 0 && renderFAQ && renderFAQ(enhanced.faqs)}
     </>
   );
 
-  // Let consumer control the entire layout
-  return <>{renderLayout(enhancedContent, blog)}</>;
+  // Combine all content
+  const fullContent = (
+    <>
+      {breadcrumbComponent}
+      <article>
+        {titleComponent}
+        {metadataComponent}
+        {baseContent}
+        {enhancedSections}
+      </article>
+    </>
+  );
+
+  // Use custom layout if provided, otherwise use default
+  if (renderLayout) {
+    return <>{renderLayout(fullContent, blog)}</>;
+  }
+
+  // Default layout wrapper
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+      {fullContent}
+    </div>
+  );
 };

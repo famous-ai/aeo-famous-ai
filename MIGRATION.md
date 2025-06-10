@@ -2,7 +2,7 @@
 
 ## Breaking Changes Overview
 
-Version 1.0.0 introduces a **complete architectural change** from coupled layout components to a true headless CMS with render props pattern.
+Version 1.0.0 introduces a **hybrid approach** - works standalone with sensible defaults OR allows selective customization to prevent duplication.
 
 ## Before (v0.1.0)
 
@@ -17,27 +17,45 @@ import { BlogArticleTemplate } from 'famous-ai';
 />
 ```
 
-## After (v1.0.0)
+## After (v1.0.0) - Three Usage Modes
 
+### Mode 1: Standalone (Easiest Migration)
 ```tsx
-import { BlogArticleTemplate } from 'famous-ai';
+// Works immediately with default styling
+<BlogArticleTemplate blog={blog} />
+```
 
+### Mode 2: Selective Control (Recommended)
+```tsx
+// Hide SDK elements to prevent duplication
+<div className="my-layout">
+  <h1>{blog.title}</h1>  {/* Your title */}
+  
+  <BlogArticleTemplate 
+    blog={blog}
+    hideTitle={true}        // Hide SDK title
+    hideBreadcrumb={true}   // Hide SDK breadcrumb
+    renderFAQ={(faqs) => (
+      <div className="my-faq-design">
+        {faqs.map((faq, index) => (
+          <details key={index}>
+            <summary>{faq.question}</summary>
+            <p>{faq.answer}</p>
+          </details>
+        ))}
+      </div>
+    )}
+  />
+</div>
+```
+
+### Mode 3: Full Control (Advanced)
+```tsx
 <BlogArticleTemplate 
   blog={blog}
   renderLayout={(content, blog) => (
-    <div className="my-custom-layout">
-      <h1>{blog.title}</h1>
+    <div className="completely-custom">
       {content}
-    </div>
-  )}
-  renderFAQ={(faqs) => (
-    <div className="my-faq-styles">
-      {faqs.map((faq, index) => (
-        <details key={index}>
-          <summary>{faq.question}</summary>
-          <p>{faq.answer}</p>
-        </details>
-      ))}
     </div>
   )}
 />
@@ -45,27 +63,32 @@ import { BlogArticleTemplate } from 'famous-ai';
 
 ## New Features
 
+- **Control Props**: `hideTitle`, `hideBreadcrumb`, `hideMetadata`, `hideHeader`
 - **Table of Contents**: `renderTOC` prop for navigation
 - **Key Insights**: `renderInsights` prop for highlights  
-- **FAQs**: `renderFAQ` prop for structured Q&A
-- **Enhanced SEO**: Automatic FAQ structured data
+- **FAQs**: `renderFAQ` prop with automatic SEO structured data
+- **Default Styling**: Works out of the box with minimal inline styles
 
-## CSS Changes
+## Solving Title Duplication
 
-All CSS styles have been removed. You now control 100% of the styling through your render props.
+```tsx
+// OLD PROBLEM: Multiple titles
+<h1>{blog.title}</h1>           // Your title
+<BlogArticleTemplate blog={blog} />  // SDK also renders title
 
-## Benefits
-
-✅ Works with any design system (Tailwind, Material-UI, etc.)  
-✅ Perfect TypeScript support  
-✅ Enhanced SEO with structured data  
-✅ True headless architecture  
+// NEW SOLUTION: Hide SDK title
+<h1>{blog.title}</h1>           // Your title
+<BlogArticleTemplate 
+  blog={blog} 
+  hideTitle={true}              // SDK won't render title
+/>
+```
 
 ## Migration Steps
 
-1. Update package: `npm install famous-ai@1.0.0`
-2. Replace old `BlogArticleTemplate` usage with render props
-3. Implement your own styling in render functions
-4. Use new enhanced features (TOC, FAQ, Insights) as needed
+1. **Quick Migration**: Just remove `className` props - component works standalone
+2. **Prevent Duplication**: Add `hideTitle={true}`, `hideBreadcrumb={true}` as needed  
+3. **Enhanced Features**: Add `renderFAQ`, `renderTOC` for rich content
+4. **Full Customization**: Use `renderLayout` if you need complete control
 
-See `examples/next-app/blog-example.tsx` for complete implementation examples.
+See `examples/next-app/blog-example.tsx` for all three modes demonstrated.

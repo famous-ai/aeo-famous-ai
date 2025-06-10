@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import type { Blog } from '../types/blog-types';
+import type { Blog, SimpleFAQItem } from '../types/blog-types';
 
 /**
  * Converts blog technical data to Next.js Metadata format
@@ -9,6 +9,13 @@ import type { Blog } from '../types/blog-types';
 export function convertBlogToNextMetadata(blog: Blog): Metadata {
   const { technical_data } = blog;
   const { metadata, entity_data } = technical_data;
+  
+  // Extract FAQs for structured data
+  const faqs: SimpleFAQItem[] = blog.faqs || 
+    technical_data?.schemas?.faq?.mainEntity?.map(item => ({
+      question: item.name,
+      answer: item.acceptedAnswer.text
+    })) || [];
   
   // Create Next.js metadata object
   const nextMetadata: Metadata = {
@@ -65,6 +72,24 @@ export function convertBlogToNextMetadata(blog: Blog): Metadata {
         name: author
       }))
     }),
+    
+    // FAQ structured data for enhanced SEO
+    ...(faqs.length > 0 && {
+      other: {
+        'script:ld+json': JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map(faq => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: faq.answer
+            }
+          }))
+        })
+      }
+    })
   };
   
   // Add hreflang alternates if available

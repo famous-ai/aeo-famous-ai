@@ -1,5 +1,22 @@
 // blog-types.ts
 
+// Enhanced Content Types
+export interface TOCItem {
+  id: string;
+  title: string;
+  anchor: string;
+  level: number;
+}
+
+export interface InsightItem {
+  content: string;
+}
+
+export interface SimpleFAQItem {
+  question: string;
+  answer: string;
+}
+
 // Core Types
 export interface BlogResponse {
   workspace_id: number;
@@ -18,6 +35,11 @@ export interface Blog {
   created_at: string;
   updated_at: string;
   technical_data: TechnicalData;
+  
+  // Enhanced content fields (optional - gracefully handled if missing)
+  keyInsights?: InsightItem[];
+  faqs?: SimpleFAQItem[];
+  tableOfContents?: TOCItem[];
 }
 
 // Technical Data Types

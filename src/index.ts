@@ -19,7 +19,10 @@ export type {
   BlogResponse,
   TechnicalData,
   MetadataStructure,
-  ContentStructure
+  ContentStructure,
+  TOCItem,
+  InsightItem,
+  SimpleFAQItem
 } from './types/blog-types';
 
 // Export CSS

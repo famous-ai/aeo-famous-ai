@@ -1,5 +1,5 @@
 // This file serves as a reference for implementing the Famous AI blog components
-// in a Next.js application using the new App Router
+// in a Next.js application using the new App Router and render props pattern
 
 // For the blog listing page (app/blog/page.tsx):
 import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
@@ -22,27 +22,18 @@ export default async function BlogPage() {
 
 // For the individual blog page (app/blog/[slug]/page.tsx):
 import { notFound } from 'next/navigation';
-import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug } from 'famous-ai';
-import { Metadata } from 'next';
+import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug, convertBlogToNextMetadata } from 'famous-ai';
+import type { Metadata } from 'next';
 
-// Generate metadata for each blog post (optional but recommended for SEO)
+// Generate metadata for each blog post (includes FAQ structured data automatically)
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const blog = await fetchBlogBySlug(params.slug);
   
   if (!blog) {
-    return {
-      title: 'Blog Not Found',
-    };
+    return { title: 'Blog Not Found' };
   }
   
-  return {
-    title: blog.title,
-    description: blog.technical_data.metadata.core.description,
-    openGraph: {
-      title: blog.technical_data.metadata.open_graph.title,
-      description: blog.technical_data.metadata.open_graph.description,
-    },
-  };
+  return convertBlogToNextMetadata(blog);
 }
 
 // Generate static paths at build time
@@ -55,13 +46,11 @@ export async function generateStaticParams() {
   }));
 }
 
-export const revalidate = 3600; // Revalidate every hour (optional)
+export const revalidate = 3600;
 
 export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
-  // Fetch specific blog by slug at build time
   const blog = await fetchBlogBySlug(params.slug);
   
-  // If blog not found, show 404
   if (!blog) {
     notFound();
   }
@@ -70,8 +59,91 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
     <BlogArticleTemplate
       blog={blog}
       loading={false}
-      basePath="/blog"
-      homePath="/"
+      
+      // Required: Consumer controls entire layout
+      renderLayout={(content, blog) => (
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Custom breadcrumbs */}
+          <nav className="text-sm text-gray-600 mb-6">
+            <a href="/" className="hover:text-blue-600">Home</a>
+            {' > '}
+            <a href="/blog" className="hover:text-blue-600">Blog</a>
+            {' > '}
+            <span>{blog.title}</span>
+          </nav>
+
+          {/* Article header */}
+          <header className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">{blog.title}</h1>
+            {blog.published_at && (
+              <time className="text-gray-600">
+                Published: {new Date(blog.published_at).toLocaleDateString()}
+              </time>
+            )}
+          </header>
+
+          {/* Main content with enhancements */}
+          <main className="prose prose-lg max-w-none">
+            {content}
+          </main>
+
+          {/* Custom footer */}
+          <footer className="mt-12 pt-6 border-t">
+            <a href="/blog" className="text-blue-600 hover:underline">
+              ← Back to all blogs
+            </a>
+          </footer>
+        </div>
+      )}
+      
+      // Optional: Custom Table of Contents
+      renderTOC={(toc) => (
+        <aside className="bg-gray-50 p-6 rounded-lg mb-8">
+          <h2 className="text-xl font-semibold mb-4">Table of Contents</h2>
+          <ul className="space-y-2">
+            {toc.map((item) => (
+              <li key={item.id} className={item.level === 2 ? "font-medium" : "ml-4 text-gray-700"}>
+                <a href={item.anchor} className="hover:text-blue-600">
+                  {item.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+      
+      // Optional: Custom Key Insights
+      renderInsights={(insights) => (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-6 my-8">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">Key Insights</h3>
+          <ul className="space-y-2">
+            {insights.map((insight, index) => (
+              <li key={index} className="text-blue-800">
+                • {insight.content}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      
+      // Optional: Custom FAQ Section
+      renderFAQ={(faqs) => (
+        <section className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <details key={index} className="border rounded-lg">
+                <summary className="font-medium p-4 cursor-pointer hover:bg-gray-50">
+                  {faq.question}
+                </summary>
+                <div className="p-4 pt-0 text-gray-700">
+                  {faq.answer}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
     />
   );
 }

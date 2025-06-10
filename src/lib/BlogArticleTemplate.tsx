@@ -1,6 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
-import { Blog } from '../types/blog-types';
+import { Blog, TOCItem, InsightItem, SimpleFAQItem } from '../types/blog-types';
 
 export interface BlogArticleTemplateProps {
   /**
@@ -14,59 +13,74 @@ export interface BlogArticleTemplateProps {
   loading?: boolean;
 
   /**
-   * Custom CSS class for the container
-   */
-  className?: string;
-
-  /**
-   * Custom CSS class for the content
-   */
-  contentClassName?: string;
-
-  /**
-   * Base path for blog links
+   * Base path for blog links (for data extraction)
    */
   basePath?: string;
 
   /**
-   * Home page path
+   * Home page path (for data extraction)
    */
   homePath?: string;
 
   /**
-   * Loading message to display
+   * Required: Consumer controls entire layout and presentation
    */
-  loadingMessage?: string;
+  renderLayout: (content: React.ReactNode, blog: Blog) => React.ReactNode;
 
   /**
-   * Error message when blog is not found
+   * Optional: Render table of contents when available
    */
-  errorMessage?: string;
+  renderTOC?: (toc: TOCItem[]) => React.ReactNode;
 
   /**
-   * Text for the back to blogs link
+   * Optional: Render key insights when available
    */
-  backLinkText?: string;
+  renderInsights?: (insights: InsightItem[]) => React.ReactNode;
 
   /**
-   * Whether to include breadcrumbs
+   * Optional: Render FAQs when available
    */
-  includeBreadcrumbs?: boolean;
+  renderFAQ?: (faqs: SimpleFAQItem[]) => React.ReactNode;
 
   /**
-   * Whether to include JSON-LD structured data
+   * Optional: Loading state renderer
    */
-  includeJsonLd?: boolean;
+  renderLoading?: () => React.ReactNode;
 
   /**
-   * Custom renderer for blog content
+   * Optional: Error state renderer
    */
-  contentRenderer?: (blog: Blog) => React.ReactNode;
+  renderError?: () => React.ReactNode;
+}
 
-  /**
-   * Custom renderer for blog date
-   */
-  dateRenderer?: (blog: Blog) => React.ReactNode;
+/**
+ * Extract enhanced content from blog data with fault tolerance
+ */
+function extractEnhancedContent(blog: Blog): {
+  faqs: SimpleFAQItem[];
+  tableOfContents: TOCItem[];
+  keyInsights: InsightItem[];
+} {
+  return {
+    // Extract FAQs from existing schema or use provided faqs
+    faqs: blog.faqs || 
+      blog.technical_data?.schemas?.faq?.mainEntity?.map(item => ({
+        question: item.name,
+        answer: item.acceptedAnswer.text
+      })) || [],
+    
+    // Build TOC from content structure or use provided TOC
+    tableOfContents: blog.tableOfContents ||
+      blog.technical_data?.content_structure?.sections?.flatMap(section => [
+        { id: section.id, title: section.h2, anchor: `#${section.id}`, level: 2 },
+        ...(section.children?.map(child => ({
+          id: child.id, title: child.h3, anchor: `#${child.id}`, level: 3
+        })) || [])
+      ]) || [],
+    
+    // Use provided insights or empty array
+    keyInsights: blog.keyInsights || []
+  };
 }
 
 /**
@@ -75,120 +89,41 @@ export interface BlogArticleTemplateProps {
 export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
   blog,
   loading = false,
-  className = 'famousai-blog-container',
-  contentClassName = 'famousai-blog-content',
-  basePath = '/blog',
-  homePath = '/',
-  loadingMessage = 'Loading blog article...',
-  errorMessage = 'The requested blog article could not be found.',
-  backLinkText = 'Back to all blogs',
-  includeBreadcrumbs = true,
-  includeJsonLd = true,
-  contentRenderer,
-  dateRenderer,
+  renderLayout,
+  renderTOC,
+  renderInsights,
+  renderFAQ,
+  renderLoading,
+  renderError,
 }) => {
-  // Generate JSON-LD structured data
-  const generateJsonLd = (blog: Blog) => {
-    const { schemas } = blog.technical_data;
-
-    const articleSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: blog.title,
-      description: blog.technical_data.metadata.core.description,
-      author: schemas.article.author,
-      publisher: schemas.article.publisher,
-      datePublished: blog.published_at,
-      dateModified: blog.updated_at,
-      mainEntityOfPage: {
-        '@type': 'WebPage',
-        '@id': blog.technical_data.url_data.canonical_url,
-      },
-    };
-
-    return JSON.stringify(articleSchema);
-  };
-
-  // Default content renderer
-  const defaultContentRenderer = (blog: Blog) => (
-    <div
-      className={contentClassName}
-      dangerouslySetInnerHTML={{ __html: blog.content }}
-    />
-  );
-
-  // Default date renderer
-  const defaultDateRenderer = (blog: Blog) => (
-    blog.published_at && (
-      <div className="famousai-blog-date">
-        Published: {new Date(blog.published_at).toLocaleDateString()}
-        {blog.updated_at && blog.updated_at !== blog.published_at && (
-          <> | Updated: {new Date(blog.updated_at).toLocaleDateString()}</>
-        )}
-      </div>
-    )
-  );
-
+  // Handle loading state
   if (loading) {
-    return (
-      <div className={`${className} famousai-blog-loading`}>
-        <p>{loadingMessage}</p>
-      </div>
-    );
+    return renderLoading ? renderLoading() : <div>Loading...</div>;
   }
 
+  // Handle error state
   if (!blog) {
-    return (
-      <div className={`${className} famousai-blog-error`}>
-        <h1 className="famousai-blog-error-title">Blog Not Found</h1>
-        <p>{errorMessage}</p>
-        <Link href={basePath} className="famousai-blog-back-link">
-          {backLinkText}
-        </Link>
-      </div>
-    );
+    return renderError ? renderError() : <div>Blog not found</div>;
   }
 
-  return (
-    <div className={className}>
-      {/* JSON-LD structured data */}
-      {includeJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: generateJsonLd(blog)
-          }}
-        />
-      )}
+  // Extract enhanced content with fault tolerance
+  const enhanced = extractEnhancedContent(blog);
 
-      {/* Breadcrumbs */}
-      {includeBreadcrumbs && (
-        <div className="famousai-blog-breadcrumbs">
-          <Link href={homePath} className="famousai-breadcrumb-link">Home</Link>
-          {' > '}
-          <Link href={basePath} className="famousai-breadcrumb-link">Blog</Link>
-          {' > '}
-          <span>{blog.title}</span>
-        </div>
-      )}
-
-      {/* Blog Content */}
-      <article className="famousai-blog-article">
-        <h1 className="famousai-blog-title">{blog.title}</h1>
-
-        {/* Blog date */}
-        {dateRenderer ? dateRenderer(blog) : defaultDateRenderer(blog)}
-
-        {/* Blog content */}
-        {contentRenderer ? contentRenderer(blog) : defaultContentRenderer(blog)}
-      </article>
-
-      {/* Back to blogs link */}
-      <div className="famousai-blog-footer">
-        <Link href={basePath} className="famousai-blog-back-link">
-          ← {backLinkText}
-        </Link>
-      </div>
-    </div>
+  // Create base content
+  const baseContent = (
+    <div dangerouslySetInnerHTML={{ __html: blog.content }} />
   );
+
+  // Create enhanced content by combining base + optional enhancements
+  const enhancedContent = (
+    <>
+      {baseContent}
+      {enhanced.tableOfContents.length > 0 && renderTOC && renderTOC(enhanced.tableOfContents)}
+      {enhanced.keyInsights.length > 0 && renderInsights && renderInsights(enhanced.keyInsights)}
+      {enhanced.faqs.length > 0 && renderFAQ && renderFAQ(enhanced.faqs)}
+    </>
+  );
+
+  // Let consumer control the entire layout
+  return <>{renderLayout(enhancedContent, blog)}</>;
 };

@@ -1,6 +1,7 @@
 // This file serves as a reference for implementing the Famous AI blog components
 // in a Next.js application using the new App Router and render props pattern
 
+/*
 // For the blog listing page (app/blog/page.tsx):
 import { BlogArticlesTemplate, fetchBlogs } from 'famous-ai';
 
@@ -19,11 +20,13 @@ export default async function BlogPage() {
     />
   );
 }
+*/
 
 // For the individual blog page (app/blog/[slug]/page.tsx):
 import { notFound } from 'next/navigation';
 import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug, convertBlogToNextMetadata } from 'famous-ai';
 import type { Metadata } from 'next';
+import type { TOCItem, InsightItem, SimpleFAQItem } from 'famous-ai';
 
 // Generate metadata for each blog post (includes FAQ structured data automatically)
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -83,11 +86,11 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
         homePath="/"
         
         // Enhanced content with custom styling
-        renderTOC={(toc) => (
+        renderTOC={(toc: TOCItem[]) => (
           <aside className="bg-gray-50 p-6 rounded-lg mb-8">
             <h2 className="text-xl font-semibold mb-4">Table of Contents</h2>
             <ul className="space-y-2">
-              {toc.map((item) => (
+              {toc.map((item: TOCItem) => (
                 <li key={item.id} className={item.level === 2 ? "font-medium" : "ml-4 text-gray-700"}>
                   <a href={item.anchor} className="hover:text-blue-600">
                     {item.title}
@@ -98,11 +101,11 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
           </aside>
         )}
         
-        renderInsights={(insights) => (
+        renderInsights={(insights: InsightItem[]) => (
           <div className="bg-blue-50 border-l-4 border-blue-400 p-6 my-8">
             <h3 className="text-lg font-semibold text-blue-900 mb-4">Key Insights</h3>
             <ul className="space-y-2">
-              {insights.map((insight, index) => (
+              {insights.map((insight: InsightItem, index: number) => (
                 <li key={index} className="text-blue-800">
                   • {insight.content}
                 </li>
@@ -111,11 +114,11 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
           </div>
         )}
         
-        renderFAQ={(faqs) => (
+        renderFAQ={(faqs: SimpleFAQItem[]) => (
           <section className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
             <div className="space-y-4">
-              {faqs.map((faq, index) => (
+              {faqs.map((faq: SimpleFAQItem, index: number) => (
                 <details key={index} className="border rounded-lg">
                   <summary className="font-medium p-4 cursor-pointer hover:bg-gray-50">
                     {faq.question}

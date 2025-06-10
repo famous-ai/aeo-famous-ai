@@ -1,5 +1,91 @@
-import React from 'react';
+ import React from 'react';
 import { Blog, TOCItem, InsightItem, SimpleFAQItem } from '../types/blog-types';
+
+/**
+ * Convert text to URL-friendly slug
+ */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with single dash
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
+}
+
+/**
+ * Parse HTML content to extract headings and inject IDs for TOC
+ */
+function parseContentForTOC(htmlContent: string): {
+  modifiedContent: string;
+  tableOfContents: TOCItem[];
+} {
+  const headingRegex = /<(h[1-6])([^>]*)>(.*?)<\/h[1-6]>/gi;
+  const toc: TOCItem[] = [];
+  const usedIds = new Set<string>();
+  
+  let modifiedContent = htmlContent;
+  let match;
+  
+  // Reset regex for iteration
+  headingRegex.lastIndex = 0;
+  
+  while ((match = headingRegex.exec(htmlContent)) !== null) {
+    const [fullMatch, tagName, attributes, textContent] = match;
+    const level = parseInt(tagName.substring(1)); // Extract number from h1, h2, etc.
+    
+    // Check if heading already has an ID
+    const existingIdMatch = attributes.match(/id=["']([^"']+)["']/);
+    let id: string;
+    
+    if (existingIdMatch) {
+      // Use existing ID
+      id = existingIdMatch[1];
+    } else {
+      // Generate new ID from text content (strip HTML tags)
+      const cleanText = textContent.replace(/<[^>]*>/g, '').trim();
+      let baseId = slugify(cleanText);
+      
+      // Handle empty or invalid slugs
+      if (!baseId) {
+        baseId = `heading-${level}`;
+      }
+      
+      // Ensure unique ID
+      let uniqueId = baseId;
+      let counter = 1;
+      while (usedIds.has(uniqueId)) {
+        uniqueId = `${baseId}-${counter}`;
+        counter++;
+      }
+      
+      id = uniqueId;
+      
+      // Inject ID into the heading
+      const newAttributes = attributes.trim() ? `${attributes} id="${id}"` : ` id="${id}"`;
+      const newHeading = `<${tagName}${newAttributes}>${textContent}</${tagName}>`;
+      modifiedContent = modifiedContent.replace(fullMatch, newHeading);
+    }
+    
+    usedIds.add(id);
+    
+    // Add to TOC (strip HTML from title)
+    const cleanTitle = textContent.replace(/<[^>]*>/g, '').trim();
+    if (cleanTitle) {
+      toc.push({
+        id,
+        title: cleanTitle,
+        anchor: `#${id}`,
+        level
+      });
+    }
+  }
+  
+  return {
+    modifiedContent,
+    tableOfContents: toc
+  };
+}
 
 export interface BlogArticleTemplateProps {
   /**
@@ -84,7 +170,11 @@ function extractEnhancedContent(blog: Blog): {
   faqs: SimpleFAQItem[];
   tableOfContents: TOCItem[];
   keyInsights: InsightItem[];
+  modifiedContent: string;
 } {
+  // Parse HTML content for TOC and inject IDs
+  const { modifiedContent, tableOfContents: parsedTOC } = parseContentForTOC(blog.content);
+  
   return {
     // Extract FAQs from existing schema or use provided faqs
     faqs: blog.faqs || 
@@ -93,17 +183,14 @@ function extractEnhancedContent(blog: Blog): {
         answer: item.acceptedAnswer.text
       })) || [],
     
-    // Build TOC from content structure or use provided TOC
-    tableOfContents: blog.tableOfContents ||
-      blog.technical_data?.content_structure?.sections?.flatMap(section => [
-        { id: section.id, title: section.h2, anchor: `#${section.id}`, level: 2 },
-        ...(section.children?.map(child => ({
-          id: child.id, title: child.h3, anchor: `#${child.id}`, level: 3
-        })) || [])
-      ]) || [],
+    // Use provided TOC or parsed TOC from HTML content
+    tableOfContents: blog.tableOfContents || parsedTOC,
     
     // Use provided insights or empty array
-    keyInsights: blog.keyInsights || []
+    keyInsights: blog.keyInsights || [],
+    
+    // Return content with injected heading IDs
+    modifiedContent
   };
 }
 
@@ -172,9 +259,9 @@ export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
     </div>
   ) : null;
 
-  // Build base content
+  // Build base content using modified HTML with injected heading IDs
   const baseContent = (
-    <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+    <div dangerouslySetInnerHTML={{ __html: enhanced.modifiedContent }} />
   );
 
   // Build enhanced content sections

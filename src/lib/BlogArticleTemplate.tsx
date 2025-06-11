@@ -1,4 +1,5 @@
- import React from 'react';
+import React from 'react';
+import * as cheerio from 'cheerio';
 import { Blog, TOCItem, InsightItem, SimpleFAQItem } from '../types/blog-types';
 
 /**
@@ -14,77 +15,92 @@ function slugify(text: string): string {
 }
 
 /**
- * Parse HTML content to extract headings and inject IDs for TOC
+ * Parse HTML content to extract headings and inject IDs for TOC using Cheerio
  */
-function parseContentForTOC(htmlContent: string): {
+export function parseContentForTOC(htmlContent: string): {
   modifiedContent: string;
   tableOfContents: TOCItem[];
 } {
-  const headingRegex = /<(h[1-6])([^>]*)>(.*?)<\/h[1-6]>/gi;
+  // Handle edge cases
+  if (!htmlContent) {
+    return { modifiedContent: '', tableOfContents: [] };
+  }
+
   const toc: TOCItem[] = [];
   const usedIds = new Set<string>();
-  
-  let modifiedContent = htmlContent;
-  let match;
-  
-  // Reset regex for iteration
-  headingRegex.lastIndex = 0;
-  
-  while ((match = headingRegex.exec(htmlContent)) !== null) {
-    const [fullMatch, tagName, attributes, textContent] = match;
-    const level = parseInt(tagName.substring(1)); // Extract number from h1, h2, etc.
-    
-    // Check if heading already has an ID
-    const existingIdMatch = attributes.match(/id=["']([^"']+)["']/);
-    let id: string;
-    
-    if (existingIdMatch) {
-      // Use existing ID
-      id = existingIdMatch[1];
-    } else {
-      // Generate new ID from text content (strip HTML tags)
-      const cleanText = textContent.replace(/<[^>]*>/g, '').trim();
-      let baseId = slugify(cleanText);
-      
-      // Handle empty or invalid slugs
-      if (!baseId) {
-        baseId = `heading-${level}`;
-      }
-      
-      // Ensure unique ID
-      let uniqueId = baseId;
-      let counter = 1;
-      while (usedIds.has(uniqueId)) {
-        uniqueId = `${baseId}-${counter}`;
-        counter++;
-      }
-      
-      id = uniqueId;
-      
-      // Inject ID into the heading
-      const newAttributes = attributes.trim() ? `${attributes} id="${id}"` : ` id="${id}"`;
-      const newHeading = `<${tagName}${newAttributes}>${textContent}</${tagName}>`;
-      modifiedContent = modifiedContent.replace(fullMatch, newHeading);
+
+  try {
+    // Load HTML with Cheerio - be permissive with malformed HTML
+    const $ = cheerio.load(htmlContent, {
+      xml: false, // HTML mode for better compatibility
+    });
+
+    // Find all heading elements (h1-h6)
+    const headings = $('h1, h2, h3, h4, h5, h6');
+
+    if (headings.length === 0) {
+      return { modifiedContent: htmlContent, tableOfContents: [] };
     }
-    
-    usedIds.add(id);
-    
-    // Add to TOC (strip HTML from title)
-    const cleanTitle = textContent.replace(/<[^>]*>/g, '').trim();
-    if (cleanTitle) {
+
+    headings.each((_, element) => {
+      const $heading = $(element);
+      const tagName = element.tagName.toLowerCase();
+      const level = parseInt(tagName.substring(1)); // Extract number from h1, h2, etc.
+
+      // Get clean text content (strip nested HTML but preserve text)
+      const cleanTitle = $heading.text().trim();
+
+      if (!cleanTitle) {
+        return; // Skip headings with no text content
+      }
+
+      // Check if heading already has an ID
+      let id = $heading.attr('id');
+
+      if (!id) {
+        // Generate new ID from text content
+        let baseId = slugify(cleanTitle);
+
+        // Handle empty or invalid slugs
+        if (!baseId) {
+          baseId = `heading-${level}`;
+        }
+
+        // Ensure unique ID
+        let uniqueId = baseId;
+        let counter = 1;
+        while (usedIds.has(uniqueId)) {
+          uniqueId = `${baseId}-${counter}`;
+          counter++;
+        }
+
+        id = uniqueId;
+
+        // Inject ID into the heading
+        $heading.attr('id', id);
+      }
+
+      usedIds.add(id);
+
+      // Add to TOC
       toc.push({
         id,
         title: cleanTitle,
         anchor: `#${id}`,
-        level
+        level,
       });
-    }
+    });
+
+    // Return modified HTML
+    return {
+      modifiedContent: $.html(),
+      tableOfContents: toc,
+    };
+  } catch (error) {
+    // Fallback: return original content if parsing fails
+    console.warn('Failed to parse HTML content for TOC:', error);
+    return { modifiedContent: htmlContent, tableOfContents: [] };
   }
-  
-  return {
-    modifiedContent,
-    tableOfContents: toc
-  };
 }
 
 export interface BlogArticleTemplateProps {
@@ -174,23 +190,25 @@ function extractEnhancedContent(blog: Blog): {
 } {
   // Parse HTML content for TOC and inject IDs
   const { modifiedContent, tableOfContents: parsedTOC } = parseContentForTOC(blog.content);
-  
+
   return {
     // Extract FAQs from existing schema or use provided faqs
-    faqs: blog.faqs || 
-      blog.technical_data?.schemas?.faq?.mainEntity?.map(item => ({
+    faqs:
+      blog.faqs ||
+      blog.technical_data?.schemas?.faq?.mainEntity?.map((item) => ({
         question: item.name,
-        answer: item.acceptedAnswer.text
-      })) || [],
-    
+        answer: item.acceptedAnswer.text,
+      })) ||
+      [],
+
     // Use provided TOC or parsed TOC from HTML content
     tableOfContents: blog.tableOfContents || parsedTOC,
-    
+
     // Use provided insights or empty array
     keyInsights: blog.keyInsights || [],
-    
+
     // Return content with injected heading IDs
-    modifiedContent
+    modifiedContent,
   };
 }
 
@@ -234,9 +252,13 @@ export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
   // Build default breadcrumb component
   const breadcrumbComponent = !shouldHideBreadcrumb ? (
     <nav style={{ fontSize: '0.875rem', color: '#666', marginBottom: '1.5rem' }}>
-      <a href={homePath} style={{ color: '#0070f3', textDecoration: 'none' }}>Home</a>
+      <a href={homePath} style={{ color: '#0070f3', textDecoration: 'none' }}>
+        Home
+      </a>
       {' > '}
-      <a href={basePath} style={{ color: '#0070f3', textDecoration: 'none' }}>Blog</a>
+      <a href={basePath} style={{ color: '#0070f3', textDecoration: 'none' }}>
+        Blog
+      </a>
       {' > '}
       <span>{blog.title}</span>
     </nav>
@@ -250,19 +272,18 @@ export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
   ) : null;
 
   // Build default metadata component
-  const metadataComponent = !shouldHideMetadata && blog.published_at ? (
-    <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '2rem' }}>
-      Published: {new Date(blog.published_at).toLocaleDateString()}
-      {blog.updated_at && blog.updated_at !== blog.published_at && (
-        <> | Updated: {new Date(blog.updated_at).toLocaleDateString()}</>
-      )}
-    </div>
-  ) : null;
+  const metadataComponent =
+    !shouldHideMetadata && blog.published_at ? (
+      <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '2rem' }}>
+        Published: {new Date(blog.published_at).toLocaleDateString()}
+        {blog.updated_at && blog.updated_at !== blog.published_at && (
+          <> | Updated: {new Date(blog.updated_at).toLocaleDateString()}</>
+        )}
+      </div>
+    ) : null;
 
   // Build base content using modified HTML with injected heading IDs
-  const baseContent = (
-    <div dangerouslySetInnerHTML={{ __html: enhanced.modifiedContent }} />
-  );
+  const baseContent = <div dangerouslySetInnerHTML={{ __html: enhanced.modifiedContent }} />;
 
   // Build enhanced content sections
   const enhancedSections = (
@@ -293,8 +314,6 @@ export const BlogArticleTemplate: React.FC<BlogArticleTemplateProps> = ({
 
   // Default layout wrapper
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
-      {fullContent}
-    </div>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>{fullContent}</div>
   );
 };

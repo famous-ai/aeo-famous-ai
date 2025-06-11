@@ -49,7 +49,7 @@ const defaultConfig: FetchBlogsConfig = {
   apiKey: process.env.FAMOUS_AI_API_KEY,
   apiBaseUrl: process.env.FAMOUS_AI_API_BASE_URL,
   endpoint: 'api/v1/blogs',
-  headers: {}
+  headers: {},
 };
 
 /**
@@ -69,19 +69,21 @@ export async function fetchBlogs(
 
   // Validate required config
   if (!apiKey) {
-    console.error('API Key is required. Set it in config or through the FAMOUS_AI_API_KEY environment variable.');
+    console.error(
+      'API Key is required. Set it in config or through the FAMOUS_AI_API_KEY environment variable.'
+    );
     return null;
   }
 
   if (!apiBaseUrl) {
-    console.error('API Base URL is required. Set it in config or through the FAMOUS_AI_API_BASE_URL environment variable.');
+    console.error(
+      'API Base URL is required. Set it in config or through the FAMOUS_AI_API_BASE_URL environment variable.'
+    );
     return null;
   }
 
   // Build the URL
-  let url = apiBaseUrl.endsWith('/')
-    ? apiBaseUrl.slice(0, -1)
-    : apiBaseUrl;
+  let url = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
 
   url += `/${endpoint}`;
 
@@ -97,22 +99,22 @@ export async function fetchBlogs(
 
   // Add timestamp to ensure fresh data during each build
   const timestamp = Date.now();
-  
+
   // Prepare headers with cache control to prevent caching without Next.js warnings
   const requestHeaders: Record<string, string> = {
-    'accept': 'application/json',
+    accept: 'application/json',
     'X-API-Key': apiKey,
     'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
+    Pragma: 'no-cache',
     'x-build-time': timestamp.toString(),
-    ...headers
+    ...headers,
   };
 
   try {
     // Standard fetch with cache-busting headers added to request
     const response = await fetch(url, {
       method: 'GET',
-      headers: requestHeaders
+      headers: requestHeaders,
     });
 
     if (!response.ok) {
@@ -129,21 +131,21 @@ export async function fetchBlogs(
       return {
         workspace_id: 0, // This is a placeholder since single blog endpoint doesn't return workspace_id
         blogs: [blog],
-        count: 1
+        count: 1,
       };
     } else {
       const data: BlogResponse = await response.json();
 
       // If slug is provided, filter the blogs
       if (slug && data.blogs) {
-        const filteredBlogs = data.blogs.filter(blog =>
-          blog.technical_data.url_data.slug === slug
+        const filteredBlogs = data.blogs.filter(
+          (blog) => blog.technical_data.url_data.slug === slug
         );
 
         return {
           ...data,
           blogs: filteredBlogs,
-          count: filteredBlogs.length
+          count: filteredBlogs.length,
         };
       }
 

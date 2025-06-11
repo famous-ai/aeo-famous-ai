@@ -35,7 +35,7 @@ export interface Blog {
   created_at: string;
   updated_at: string;
   technical_data: TechnicalData;
-  
+
   // Enhanced content fields (optional - gracefully handled if missing)
   keyInsights?: InsightItem[];
   faqs?: SimpleFAQItem[];

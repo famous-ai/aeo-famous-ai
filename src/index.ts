@@ -3,12 +3,11 @@ export { BlogArticlesTemplate } from './lib/BlogArticlesTemplate';
 export { BlogArticleTemplate } from './lib/BlogArticleTemplate';
 
 // Export Blog utilities
-export {
-  fetchBlogs,
-  fetchBlogBySlug,
-  fetchBlogById
-} from './lib/fetchBlogs';
+export { fetchBlogs, fetchBlogBySlug, fetchBlogById } from './lib/fetchBlogs';
 export { convertBlogToNextMetadata } from './lib/metadataConverter';
+
+// Export internal utilities for testing/debugging
+export { parseContentForTOC } from './lib/BlogArticleTemplate';
 
 // Export Blog types
 export type { BlogArticlesTemplateProps } from './lib/BlogArticlesTemplate';
@@ -22,7 +21,7 @@ export type {
   ContentStructure,
   TOCItem,
   InsightItem,
-  SimpleFAQItem
+  SimpleFAQItem,
 } from './types/blog-types';
 
 // Export CSS

@@ -94,9 +94,7 @@ export const BlogArticlesTemplate: React.FC<BlogArticlesTemplateProps> = ({
       )}
 
       <div className="famousai-blog-item-excerpt">
-        {blog.content
-          .replace(/<[^>]*>/g, '')
-          .substring(0, 150)}...
+        {blog.content.replace(/<[^>]*>/g, '').substring(0, 150)}...
       </div>
 
       <Link
@@ -118,15 +116,13 @@ export const BlogArticlesTemplate: React.FC<BlogArticlesTemplateProps> = ({
         </div>
       ) : (
         <div className="famousai-blogs-list">
-          {blogs.length === 0 && (
-            <p className="famousai-blogs-empty">{emptyMessage}</p>
-          )}
+          {blogs.length === 0 && <p className="famousai-blogs-empty">{emptyMessage}</p>}
 
-          {blogs.map((blog) => (
+          {blogs.map((blog) =>
             blogItemRenderer
               ? blogItemRenderer(blog, basePath)
               : defaultBlogItemRenderer(blog, basePath)
-          ))}
+          )}
         </div>
       )}
     </div>

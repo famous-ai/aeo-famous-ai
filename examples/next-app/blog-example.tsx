@@ -26,7 +26,7 @@ export default async function BlogPage() {
 import { notFound } from 'next/navigation';
 import { BlogArticleTemplate, fetchBlogs, fetchBlogBySlug, convertBlogToNextMetadata } from 'famous-ai';
 import type { Metadata } from 'next';
-import type { TOCItem, InsightItem, SimpleFAQItem } from 'famous-ai';
+import type { TOCItem, InsightItem, SimpleFAQItem, Blog } from 'famous-ai';
 
 // Generate metadata for each blog post (includes FAQ structured data automatically)
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -44,12 +44,10 @@ export async function generateStaticParams() {
   const response = await fetchBlogs();
   const blogs = response?.blogs || [];
   
-  return blogs.map((blog) => ({
+  return blogs.map((blog: Blog) => ({
     slug: blog.technical_data.url_data.slug,
   }));
 }
-
-export const revalidate = 3600;
 
 export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
   const blog = await fetchBlogBySlug(params.slug);
@@ -57,6 +55,12 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   if (!blog) {
     notFound();
   }
+
+  // DEBUG TOC ISSUES: If TOC links aren't working, create a client component with:
+  // 'use client';
+  // import { useEffect } from 'react';
+  // import { debugTOCGeneration } from 'famous-ai';
+  // useEffect(() => debugTOCGeneration(blog.content, 'Next.js'), [blog]);
 
   // Three usage modes demonstrated:
 

@@ -13,12 +13,14 @@ yarn add famous-ai
 ## ✨ Features
 
 - **🎨 True Headless**: Complete design control through render props or selective hiding
-- **📊 Enhanced Content**: Auto-generated Table of Contents, FAQ sections, Key Insights
+- **📊 Enhanced Content**: Auto-generated Table of Contents (H1/H2), FAQ sections, Key Insights
+- **🔗 Working TOC Navigation**: Automatically injects heading IDs for anchor navigation
 - **🔍 SEO Optimized**: Automatic structured data, FAQ schema, metadata conversion
 - **⚡ SSG Ready**: Built for Next.js App Router with static generation support
 - **🛠️ Flexible API**: Three usage modes - standalone, selective, or full control
 - **🎯 TypeScript**: Full type safety with exported interfaces
 - **🚀 Zero Duplication**: Smart control props prevent layout conflicts
+- **🐛 Debug Tools**: Built-in utilities for troubleshooting TOC issues
 
 ## 🚀 Quick Start - Three Usage Modes
 
@@ -166,6 +168,7 @@ interface InsightItem {
 - `fetchBlogBySlug(slug)`: Fetch specific blog by slug
 - `fetchBlogById(id)`: Fetch specific blog by ID  
 - `convertBlogToNextMetadata(blog)`: Convert to Next.js Metadata with SEO
+- `debugTOCGeneration(content, env)`: Debug TOC issues (development only)
 
 ## 🔄 Migrating from v0.1.0
 
@@ -182,10 +185,11 @@ See `MIGRATION.md` for complete upgrade guide. Quick summary:
 ## 🎯 Key Features Deep Dive
 
 ### Auto-Generated Table of Contents
-- Parses HTML content for headings (h1-h6)
-- Automatically injects `id` attributes for anchor navigation
-- Generates clean, hierarchical TOC structure
-- Perfect for long-form content navigation
+- **Smart Parsing**: Extracts H1 and H2 headings only (cleaner TOC)
+- **Working Navigation**: Automatically injects `id` attributes for anchor links
+- **Clean URLs**: Generates SEO-friendly slugs (e.g., "Introduction" → `#introduction`)
+- **Duplicate Handling**: Ensures unique IDs even with duplicate headings
+- **SSR Compatible**: Works in Next.js server and client environments
 
 ### FAQ Structured Data  
 - Automatic schema.org FAQ markup for SEO
@@ -204,6 +208,36 @@ See `examples/next-app/blog-example.tsx` for all three usage modes:
 - Selective control with custom layouts  
 - Full render props customization
 - TypeScript examples with proper typing
+
+## 🐛 Troubleshooting TOC Issues
+
+If TOC links aren't working, use the debug utility:
+
+```tsx
+'use client';
+import { useEffect } from 'react';
+import { debugTOCGeneration } from 'famous-ai';
+
+export default function BlogPage({ blog }) {
+  useEffect(() => {
+    if (blog?.content && process.env.NODE_ENV === 'development') {
+      debugTOCGeneration(blog.content, 'Next.js Client');
+    }
+  }, [blog]);
+
+  return <BlogArticleTemplate blog={blog} />;
+}
+```
+
+This will log detailed information about:
+- Input content analysis (length, heading detection)
+- Parsing results (TOC count, ID injection status) 
+- Any errors in the generation process
+
+**Common Issues:**
+- **No headings found**: Content might not contain `<h1>` or `<h2>` tags
+- **IDs not injected**: Content parsing failed - check browser console
+- **Links don't scroll**: Ensure you're using the latest version
 
 ## 🚀 Environment Variables
 

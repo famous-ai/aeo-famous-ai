@@ -7,7 +7,7 @@ export { fetchBlogs, fetchBlogBySlug, fetchBlogById } from './lib/fetchBlogs';
 export { convertBlogToNextMetadata } from './lib/metadataConverter';
 
 // Export internal utilities for testing/debugging
-export { parseContentForTOC } from './lib/BlogArticleTemplate';
+export { parseContentForTOC, debugTOCGeneration } from './lib/BlogArticleTemplate';
 
 // Export Blog types
 export type { BlogArticlesTemplateProps } from './lib/BlogArticlesTemplate';

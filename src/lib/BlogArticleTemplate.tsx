@@ -35,8 +35,8 @@ export function parseContentForTOC(htmlContent: string): {
       xml: false, // HTML mode for better compatibility
     });
 
-    // Find all heading elements (h1-h6)
-    const headings = $('h1, h2, h3, h4, h5, h6');
+    // Find only h1 and h2 elements for cleaner TOC (avoid overwhelming depth)
+    const headings = $('h1, h2');
 
     if (headings.length === 0) {
       return { modifiedContent: htmlContent, tableOfContents: [] };
@@ -45,7 +45,7 @@ export function parseContentForTOC(htmlContent: string): {
     headings.each((_, element) => {
       const $heading = $(element);
       const tagName = element.tagName.toLowerCase();
-      const level = parseInt(tagName.substring(1)); // Extract number from h1, h2, etc.
+      const level = parseInt(tagName.substring(1)); // Extract number from h1, h2
 
       // Get clean text content (strip nested HTML but preserve text)
       const cleanTitle = $heading.text().trim();
@@ -91,15 +91,99 @@ export function parseContentForTOC(htmlContent: string): {
       });
     });
 
-    // Return modified HTML
+    // Smart content extraction - get only the relevant content without HTML/head/body wrappers
+    let modifiedContent: string;
+    
+    // Try to extract just the body content first
+    const bodyContent = $('body').html();
+    if (bodyContent) {
+      modifiedContent = bodyContent;
+    } else {
+      // Fallback: get the root content, but avoid full document structure
+      const rootElements = $.root().children();
+      if (rootElements.length > 0) {
+        modifiedContent = rootElements.map((_, el) => $(el).prop('outerHTML')).get().join('');
+      } else {
+        // Last resort: use $.html() but this might include wrappers
+        modifiedContent = $.html();
+      }
+    }
+
     return {
-      modifiedContent: $.html(),
+      modifiedContent,
       tableOfContents: toc,
     };
   } catch (error) {
     // Fallback: return original content if parsing fails
     console.warn('Failed to parse HTML content for TOC:', error);
     return { modifiedContent: htmlContent, tableOfContents: [] };
+  }
+}
+
+/**
+ * Debug utility for troubleshooting TOC generation issues
+ * Use this in your Next.js component to see exactly what's happening
+ */
+export function debugTOCGeneration(htmlContent: string, environment = 'unknown'): {
+  input: {
+    contentLength: number;
+    hasH1: boolean;
+    hasH2: boolean;
+    preview: string;
+  };
+  output: {
+    tocCount: number;
+    contentModified: boolean;
+    firstTocItem?: { id: string; title: string; level: number };
+    modifiedPreview: string;
+  };
+  error?: string;
+} {
+  console.log(`🔍 TOC Debug - Environment: ${environment}`);
+  
+  const input = {
+    contentLength: htmlContent?.length || 0,
+    hasH1: htmlContent?.includes('<h1') || false,
+    hasH2: htmlContent?.includes('<h2') || false,
+    preview: htmlContent?.substring(0, 200) || '',
+  };
+  
+  console.log('📥 Input:', input);
+  
+  try {
+    const result = parseContentForTOC(htmlContent);
+    
+    const output = {
+      tocCount: result.tableOfContents.length,
+      contentModified: result.modifiedContent !== htmlContent,
+      firstTocItem: result.tableOfContents[0],
+      modifiedPreview: result.modifiedContent.substring(0, 200),
+    };
+    
+    console.log('📤 Output:', output);
+    console.log('🎯 TOC Items:', result.tableOfContents);
+    
+    if (output.contentModified) {
+      console.log('✅ Content was modified (IDs injected)');
+    } else {
+      console.log('❌ Content unchanged - this is the bug!');
+    }
+    
+    return { input, output };
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('💥 TOC Generation Error:', errorMessage);
+    
+    return {
+      input,
+      output: {
+        tocCount: 0,
+        contentModified: false,
+        modifiedPreview: '',
+      },
+      error: errorMessage,
+    };
   }
 }
 

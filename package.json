@@ -1,7 +1,7 @@
 {
   "name": "famous-ai",
-  "version": "0.1.0",
-  "description": "Headless CMS for Next.js to fetch and render FAQ data",
+  "version": "1.0.0",
+  "description": "Headless CMS SDK for Next.js with render props for complete design control",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -61,5 +61,8 @@
   },
   "directories": {
     "example": "examples"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.0"
   }
 }
